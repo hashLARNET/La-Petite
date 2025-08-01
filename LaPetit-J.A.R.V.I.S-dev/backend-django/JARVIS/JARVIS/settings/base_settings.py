@@ -1,0 +1,210 @@
+from pathlib import Path
+import os
+import dotenv
+import logging
+
+# Load environment variables from .env file
+dotenv.load_dotenv()
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+
+# SECURITY WARNING: keep the secret key used in production secret!
+# TODO: Set a strong secret key in the .env file
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+
+# SECURITY WARNING: don't run with debug turned on in production!
+# Apagar una vez que se suba a produccion
+DEBUG = True
+
+# Hosts/domain names that are valid for this site; required if DEBUG is False
+# Luego se tendra que agregar el dominio de la web que se utilizara para la API
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
+
+# Application definition
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    # Aplicaciones del proyecto
+    'clientes',
+    'reservas',
+    'pagos',
+    'terapeutas',
+    'tratamientos',
+    'ia_chatbot',
+    # Aplicaciones de terceros
+    'corsheaders',  # Middleware para CORS
+]
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Middleware for CORS
+    'corsheaders.middleware.CorsMiddleware',
+]
+
+ROOT_URLCONF = 'JARVIS.urls'
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = 'JARVIS.wsgi.application'
+
+
+# Database
+# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
+# Agregar la base de datos postgresql que se hosteara en aws (url debe estar en el .env)
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv('DB_NAME'),         # Nombre de la base de datos en AWS RDS
+#         'USER': os.getenv('DB_USER'),         # Usuario de la base de datos
+#         'PASSWORD': os.getenv('DB_PASSWORD'), # Contraseña del usuario
+#         'HOST': os.getenv('DB_HOST'),         # Endpoint de AWS RDS
+#         'PORT': os.getenv('DB_PORT'),         # Puerto (por defecto suele ser 5432)
+#     }
+# }
+
+# Si comentas la configuración DATABASES, Django usará la configuración por defecto (SQLite).
+# No tirará error, pero usará SQLite en vez de PostgreSQL.
+
+
+# Password validation
+# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
+
+# Internationalization
+# https://docs.djangoproject.com/en/5.2/topics/i18n/
+
+LANGUAGE_CODE = 'en-us'
+
+TIME_ZONE = 'UTC'
+
+USE_I18N = True
+
+USE_TZ = True
+
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/5.2/howto/static-files/
+
+# Si utilizamos S3 para almacenar los archivos estaticos, no es necesario definir STATIC_URL
+STATIC_URL = 'static/'
+
+# Default primary key field type
+# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+
+# CORS configuration
+# Permitir solicitudes CORS desde Twilio y WhatsApp
+
+CORS_ALLOWED_ORIGINS = [
+    'https://www.twilio.com',
+    # Agrega aquí otros orígenes si usas un frontend propio
+]
+
+CORS_ALLOW_ALL_ORIGINS = False  # Mejor mantenerlo en False por seguridad, solo permite los orígenes especificados, aunque para desarrollo se puede ponerlo en True
+
+# Headers que se permiten en las solicitudes CORS
+# Esto es importante para que las solicitudes de Twilio y WhatsApp funcionen correctamente, verifica que estos headers sean los que realmente necesitas
+CORS_ALLOW_HEADERS = [
+    'content-type',
+    'authorization',
+    'x-csrftoken'
+]
+
+# Configuración avanzada del logger para Django
+
+class CustomFormatter(logging.Formatter):
+    """Formato personalizado para los logs"""
+
+    FORMATS = {
+        logging.DEBUG: "%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s",
+        logging.INFO: "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        logging.WARNING: "%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s",
+        logging.ERROR: "%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(funcName)s\n%(message)s\n",
+        logging.CRITICAL: "%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(funcName)s\n%(message)s\n",
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+# Crear carpeta de logs si no existe
+LOG_DIR = Path(BASE_DIR) / "logs"
+LOG_DIR.mkdir(exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'custom': {
+            '()': CustomFormatter,
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'custom',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': str(LOG_DIR / 'jarvis.log'),
+            'formatter': 'custom',
+            'encoding': 'utf-8',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        # Puedes agregar más loggers aquí si es necesario
+    },
+}
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
